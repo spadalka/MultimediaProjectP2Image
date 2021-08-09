@@ -37,8 +37,6 @@ public class Controller {
     private Parent root;
     private Scene scene;
     @FXML
-    private Label nextPreviewTransformation;
-    @FXML
     private AnchorPane originalPane;
     @FXML
     private AnchorPane compressedPane;
@@ -81,7 +79,6 @@ public class Controller {
 
     double[][] product(double[][] A, double[][] B) {
         double[][] productMatrix = new double[8][8];
-        double a = sqrt((double) 1/8);
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 for (int k = 0; k < 8; k++) {
@@ -94,7 +91,6 @@ public class Controller {
 
     double[][] transpose(double[][] A) {
         double[][] transposedMatrix = new double[8][8];
-        double a = sqrt((double) 1/8);
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 transposedMatrix[i][j] = A[j][i];
@@ -103,32 +99,105 @@ public class Controller {
         return transposedMatrix;
     }
 
+    int[][] roundOff(double[][] A) {
+        int[][] roundedMatrix = new int[8][8];
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                roundedMatrix[i][j] = (int) round(A[i][j]);
+            }
+        }
+        return roundedMatrix;
+    }
+
+
     // https://stackoverflow.com/questions/5061912/printing-out-a-2d-array-in-matrix-format
-    public void printMatrix(int[][] matrix) {
+    public void printMatrix(double[][] matrix) {
         for (int row = 0; row < matrix.length; row++) {
             for (int col = 0; col < matrix[row].length; col++) {
-                System.out.printf("%4d", matrix[row][col]);
+                System.out.printf("%10f",  matrix[row][col]);
             }
             System.out.println();
         }
     }
 
-    // https://stackoverflow.com/questions/3514158/how-do-you-clone-a-bufferedimage
-    static BufferedImage deepCopy(BufferedImage bi) {
-        ColorModel cm = bi.getColorModel();
-        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
-        WritableRaster raster = bi.copyData(null);
-        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+    public void printMatrix(int[][] matrix) {
+        for (int row = 0; row < matrix.length; row++) {
+            for (int col = 0; col < matrix[row].length; col++) {
+                System.out.printf("%6d",  matrix[row][col]);
+            }
+            System.out.println();
+        }
     }
 
     public void initiateCompression(ActionEvent event) {
-
+        compress(file);
     }
 
+    public void compress(File file) {
 
 
+        originalImage = null;
+        try {
+            originalImage = ImageIO.read(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assert originalImage != null;
+
+        int width = originalImage.getWidth();
+        int height = originalImage.getHeight();
+
+        int numHorizontalChunks = width / 8;
+        int numVerticalChunks = height / 8;
+
+        double[][] transformMatrix = getTransformMatrix();
+        double[][] transposedMatrix = transpose(transformMatrix);
+        printMatrix(transformMatrix);
+        System.out.println();
+        printMatrix(transposedMatrix);
+
+        double[][] redMatrix = new double[8][8];
+        double[][] greenMatrix = new double[8][8];
+        double[][] blueMatrix = new double[8][8];
+
+        for (int y_factor = 0; y_factor < numVerticalChunks; y_factor++) {
+            for (int x_factor = 0; x_factor < numVerticalChunks; x_factor++) {
+
+                for (int y = 0; y < 8; y++) {
+                    for (int x = 0; x < 8; x++) {
+                        int row = 8 * x_factor + x;
+                        int col = 8 * y_factor + y;
+
+                        Color colorAtPixel = new Color(originalImage.getRGB(row, col));
+                        redMatrix[row][col] = colorAtPixel.getRed();
+                        greenMatrix[row][col] = colorAtPixel.getGreen();
+                        blueMatrix[row][col] = colorAtPixel.getBlue();
+                    }
+                }
+                if (y_factor == 0) {
+                    double[][] intermediateMatrix = product(redMatrix, transposedMatrix);
+                    double[][] finalMatrix = product(transformMatrix, intermediateMatrix);
+                    int[][] roundedMatrix = roundOff(finalMatrix);
+                    System.out.println();
+                    printMatrix(roundedMatrix);
+                }
+
+//                Color grayScaleForPixel = new Color(redValue, greenValue, blueValue);
+//                originalImage.setRGB(row, col, grayScaleForPixel.getRGB());
+            }
+        }
+
+        Image displayImage = SwingFXUtils.toFXImage(originalImage, null);
+        ImageView imageView = new ImageView(displayImage);
+        compressedPane.getChildren().set(0, imageView);
+        StackPane.setAlignment(imageView, Pos.CENTER);
+
+
+        File output = new File("compressedImage.bmp");
+        try {
+            ImageIO.write(originalImage, "bmp", output);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
-
-
 }
