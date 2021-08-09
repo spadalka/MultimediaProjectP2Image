@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+
+<BorderPane minHeight="800.0" minWidth="1500.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+   <bottom>
+      <AnchorPane maxHeight="90.0" prefHeight="90.0" prefWidth="650.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button layoutX="101.0" layoutY="8.0" mnemonicParsing="false" onAction="#openFileImage" prefHeight="25.0" prefWidth="120.0" text="Open File..." AnchorPane.bottomAnchor="57.0" AnchorPane.leftAnchor="101.0" />
+            <Button fx:id="compressButton" layoutX="429.0" layoutY="8.0" mnemonicParsing="false" onAction="#initiateCompression" prefHeight="25.0" prefWidth="120.0" text="Compress" AnchorPane.bottomAnchor="57.0" AnchorPane.rightAnchor="101.0">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+            </Button>
+         </children>
+      </AnchorPane>
+   </bottom>
+   <top>
+      <AnchorPane maxHeight="50.0" prefHeight="50.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+   </top>
+   <center>
+      <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets bottom="50.0" top="50.0" />
+         </padding>
+         <children>
+            <AnchorPane fx:id="originalPane" minWidth="704.0">
+               <children>
+                  <ImageView pickOnBounds="true" preserveRatio="true" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </AnchorPane>
+            <AnchorPane fx:id="compressedPane" minWidth="704.0">
+               <children>
+                  <ImageView pickOnBounds="true" preserveRatio="true" />
+               </children>
+            </AnchorPane>
+         </children>
+      </HBox>
+   </center>
+</BorderPane>
