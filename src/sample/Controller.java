@@ -63,7 +63,7 @@ public class Controller {
         }
     }
 
-    double[][] getTransformMatrix() {
+    public double[][] getTransformMatrix() {
         double[][] transformMatrix = new double[8][8];
         double a = sqrt((double) 1/8);
         for (int i = 0; i < 8; i++) {
@@ -77,7 +77,7 @@ public class Controller {
         return transformMatrix;
     }
 
-    double[][] product(double[][] A, double[][] B) {
+    public double[][] product(double[][] A, double[][] B) {
         double[][] productMatrix = new double[8][8];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -89,7 +89,19 @@ public class Controller {
         return productMatrix;
     }
 
-    double[][] transpose(double[][] A) {
+    public double[][] product(double[][] A, int[][] B) {
+        double[][] productMatrix = new double[8][8];
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                for (int k = 0; k < 8; k++) {
+                    productMatrix[i][j]+=A[i][k]*B[k][j];
+                }
+            }
+        }
+        return productMatrix;
+    }
+
+    public double[][] transpose(double[][] A) {
         double[][] transposedMatrix = new double[8][8];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -99,7 +111,7 @@ public class Controller {
         return transposedMatrix;
     }
 
-    int[][] roundOff(double[][] A) {
+    public int[][] roundOff(double[][] A) {
         int[][] roundedMatrix = new int[8][8];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -109,6 +121,21 @@ public class Controller {
         return roundedMatrix;
     }
 
+    public void quantize(int[][] A) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                A[i][j] = A[i][j]/quantizationMatrix[i][j];
+            }
+        }
+    }
+
+    public void dequantize(int[][] A) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                A[i][j] = A[i][j]*quantizationMatrix[i][j];
+            }
+        }
+    }
 
     // https://stackoverflow.com/questions/5061912/printing-out-a-2d-array-in-matrix-format
     public void printMatrix(double[][] matrix) {
@@ -175,11 +202,27 @@ public class Controller {
                     }
                 }
                 if (y_factor == 0) {
-                    double[][] intermediateMatrix = product(redMatrix, transposedMatrix);
-                    double[][] finalMatrix = product(transformMatrix, intermediateMatrix);
-                    int[][] roundedMatrix = roundOff(finalMatrix);
+                    double[][] intermediateMatrix = product(transformMatrix, redMatrix);
+                    double[][] DCTCoefficients = product(intermediateMatrix, transposedMatrix);
+
+                    int[][] DCT_rounded = roundOff(DCTCoefficients);
                     System.out.println();
-                    printMatrix(roundedMatrix);
+                    printMatrix(DCT_rounded);
+
+                    quantize(DCT_rounded);
+                    System.out.println();
+                    printMatrix(DCT_rounded);
+
+                    dequantize(DCT_rounded);
+                    System.out.println();
+                    printMatrix(DCT_rounded);
+
+                    intermediateMatrix = product(transposedMatrix, DCT_rounded);
+                    redMatrix = product(intermediateMatrix, transformMatrix);
+                    int[][] redMatrixInt = roundOff(redMatrix);
+                    System.out.println();
+                    printMatrix(redMatrixInt);
+
                 }
 
 //                Color grayScaleForPixel = new Color(redValue, greenValue, blueValue);
