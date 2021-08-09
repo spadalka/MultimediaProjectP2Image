@@ -41,7 +41,6 @@ public class Controller {
     @FXML
     private AnchorPane compressedPane;
 
-    private int globalStepCounter = 1;
     private File file;
     private final int[][] quantizationMatrix = {{1, 1, 2, 4, 8, 16, 32, 64},
                                                 {1, 1, 2, 4, 8, 16, 32, 64},
@@ -58,8 +57,6 @@ public class Controller {
             Image image = new Image(file.toURI().toString());
             ImageView imageView = new ImageView(image);
             originalPane.getChildren().set(0, imageView);
-//            ImageView imageView2 = new ImageView(image);
-//            compressedPane.getChildren().set(0, imageView2);
         }
     }
 
@@ -162,7 +159,6 @@ public class Controller {
 
     public void compress(File file) {
 
-
         originalImage = null;
         try {
             originalImage = ImageIO.read(file);
@@ -179,16 +175,13 @@ public class Controller {
 
         double[][] transformMatrix = getTransformMatrix();
         double[][] transposedMatrix = transpose(transformMatrix);
-        printMatrix(transformMatrix);
-        System.out.println();
-        printMatrix(transposedMatrix);
 
         double[][] redMatrix = new double[8][8];
         double[][] greenMatrix = new double[8][8];
         double[][] blueMatrix = new double[8][8];
 
         for (int y_factor = 0; y_factor < numVerticalChunks; y_factor++) {
-            for (int x_factor = 0; x_factor < numVerticalChunks; x_factor++) {
+            for (int x_factor = 0; x_factor < numHorizontalChunks; x_factor++) {
 
                 for (int y = 0; y < 8; y++) {
                     for (int x = 0; x < 8; x++) {
@@ -196,51 +189,55 @@ public class Controller {
                         int col = 8 * y_factor + y;
 
                         Color colorAtPixel = new Color(originalImage.getRGB(row, col));
-                        redMatrix[row][col] = colorAtPixel.getRed();
-                        greenMatrix[row][col] = colorAtPixel.getGreen();
-                        blueMatrix[row][col] = colorAtPixel.getBlue();
+                        redMatrix[x][y] = colorAtPixel.getRed();
+                        greenMatrix[x][y] = colorAtPixel.getGreen();
+                        blueMatrix[x][y] = colorAtPixel.getBlue();
                     }
                 }
-                if (y_factor == 0) {
-                    double[][] intermediateMatrix = product(transformMatrix, redMatrix);
-                    double[][] DCTCoefficients = product(intermediateMatrix, transposedMatrix);
 
-                    int[][] DCT_rounded = roundOff(DCTCoefficients);
-                    System.out.println();
-                    printMatrix(DCT_rounded);
+                redMatrix = compressColorBlock(transformMatrix, transposedMatrix, redMatrix);
+                greenMatrix = compressColorBlock(transformMatrix, transposedMatrix, redMatrix);
+                blueMatrix = compressColorBlock(transformMatrix, transposedMatrix, redMatrix);
 
-                    quantize(DCT_rounded);
-                    System.out.println();
-                    printMatrix(DCT_rounded);
+                int[][] redMatrixInt = roundOff(redMatrix);
+                int[][] greenMatrixInt = roundOff(greenMatrix);
+                int[][] blueMatrixInt = roundOff(blueMatrix);
 
-                    dequantize(DCT_rounded);
-                    System.out.println();
-                    printMatrix(DCT_rounded);
-
-                    intermediateMatrix = product(transposedMatrix, DCT_rounded);
-                    redMatrix = product(intermediateMatrix, transformMatrix);
-                    int[][] redMatrixInt = roundOff(redMatrix);
-                    System.out.println();
-                    printMatrix(redMatrixInt);
-
+                for (int y = 0; y < 8; y++) {
+                    for (int x = 0; x < 8; x++) {
+                        int row = 8 * x_factor + x;
+                        int col = 8 * y_factor + y;
+                        System.out.println(redMatrixInt[x][y]);
+                        System.out.println(greenMatrixInt[x][y]);
+                        System.out.println(blueMatrixInt[x][y]);
+                        Color compressedColorForPixel = new Color(redMatrixInt[x][y], greenMatrixInt[x][y], blueMatrixInt[x][y]);
+                        originalImage.setRGB(row, col, compressedColorForPixel.getRGB());
+                    }
                 }
-
-//                Color grayScaleForPixel = new Color(redValue, greenValue, blueValue);
-//                originalImage.setRGB(row, col, grayScaleForPixel.getRGB());
             }
         }
 
         Image displayImage = SwingFXUtils.toFXImage(originalImage, null);
         ImageView imageView = new ImageView(displayImage);
         compressedPane.getChildren().set(0, imageView);
-        StackPane.setAlignment(imageView, Pos.CENTER);
 
+//        File output = new File("compressedImage.bmp");
+//        try {
+//            ImageIO.write(originalImage, "bmp", output);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+    }
 
-        File output = new File("compressedImage.bmp");
-        try {
-            ImageIO.write(originalImage, "bmp", output);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private double[][] compressColorBlock(double[][] transformMatrix, double[][] transposedMatrix, double[][] colorMatrix) {
+        double[][] intermediateMatrix = product(transformMatrix, colorMatrix);
+        double[][] DCTCoefficients = product(intermediateMatrix, transposedMatrix);
+
+        int[][] DCT_rounded = roundOff(DCTCoefficients);
+        quantize(DCT_rounded);
+        dequantize(DCT_rounded);
+        intermediateMatrix = product(transposedMatrix, DCT_rounded);
+        colorMatrix = product(intermediateMatrix, transformMatrix);
+        return colorMatrix;
     }
 }
