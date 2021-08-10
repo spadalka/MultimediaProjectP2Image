@@ -18,9 +18,6 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("imageProgramMain.fxml")));
         primaryStage.setTitle("Image Compressor");
         primaryStage.setScene(new Scene(root, 1600, 800));
-//        ObservableList<Node> paneChildren = ((AnchorPane) root.getChildrenUnmodifiable().get(3)).getChildren();
-//        System.out.println(paneChildren.get(0));
-//        root.getChildrenUnmodifiable().get(3).setDisable(true);
         primaryStage.show();
     }
 
